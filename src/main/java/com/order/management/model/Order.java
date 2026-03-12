@@ -32,9 +32,6 @@ public class Order {
   @Column(name = "shipping_method")
   private String shippingMethod;
 
-  @Column(name = "message")
-  private String message;
-
   @Embedded
   private Address shippingAddress;
 
@@ -94,14 +91,6 @@ public class Order {
 
   public void setShippingMethod(String shippingMethod) {
     this.shippingMethod = shippingMethod;
-  }
-
-  public String getMessage() {
-    return message;
-  }
-
-  public void setMessage(String message) {
-    this.message = message;
   }
 
   public Address getShippingAddress() {

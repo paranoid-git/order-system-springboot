@@ -14,6 +14,5 @@ public class OrderProcessingException extends RuntimeException {
     super(message);
     this.message = message;
     order.setStatus("CANCELLED");
-    order.setMessage(message);
   }
 }

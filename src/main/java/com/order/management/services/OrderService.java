@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,6 +13,7 @@ import com.order.management.dto.PostOrder;
 import com.order.management.repository.OrderRepository;
 import com.order.management.repository.ProductRepository;
 import com.order.management.repository.UserRepository;
+import com.order.management.util.ResponseUtil;
 import com.order.management.model.User;
 import org.json.simple.JSONObject;
 import com.order.management.dto.OrderDTO;
@@ -36,6 +38,8 @@ public class OrderService {
   private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 
   private final ModelMapper modelMapper;
+
+  private static final ResponseUtil responseUtil = new ResponseUtil();
 
   @Autowired
   private UserRepository userRepository;
@@ -68,7 +72,7 @@ public class OrderService {
     this.modelMapper = modelMapper;
   }
 
-  public Order createOrder(PostOrder requestBody) {
+  public ResponseEntity<?> createOrder(PostOrder requestBody) {
     Order order = new Order();
     logger.info("Creating order.");
 
@@ -78,14 +82,14 @@ public class OrderService {
     order.setTotalAmount(calculateSum(items));
     order.setDate(LocalDate.now());
     order.setStatus("PENDING");
-    order.setMessage("Order Created Successfully! Processing will begin shortly.");
     order.setUserId(requestBody.getUserId());
     order.setPaymentMethod(requestBody.getPaymentMethod());
     order.setShippingAddress(requestBody.getShippingAddress());
     order.setShippingMethod(requestBody.getShippingMethod());
     orderRepository.save(order);
     processingService.processOrderAsync(order.getOrderId());
-    return order;
+    return responseUtil.makeResponse("Order Created Successfully! Processing will begin shortly.", HttpStatus.CREATED,
+        order);
   }
 
   public Double calculateSum(List<OrderItems> items) {

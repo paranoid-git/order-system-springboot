@@ -9,6 +9,5 @@ public class OrderValidationException extends RuntimeException {
     super(message);
     this.message = message;
     order.setStatus("CANCELLED");
-    order.setMessage(message);
   }
 }

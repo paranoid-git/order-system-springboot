@@ -16,6 +16,9 @@ public class User {
   @Column(unique = true, nullable = false)
   private String email;
 
+  @Column(unique = false, nullable = false)
+  private String password;
+
   private String phone;
 
   // Constructors, getters, setters
@@ -49,5 +52,17 @@ public class User {
 
   public void setEmail(String email) {
     this.email = email;
+  }
+
+  public void setPhone(String phone) {
+    this.phone = phone;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
   }
 }
