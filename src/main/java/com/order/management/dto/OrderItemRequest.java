@@ -10,4 +10,12 @@ import lombok.NoArgsConstructor;
 public class OrderItemRequest {
   private Long productId;
   private Long quantity;
+
+  public Long getQuantity() {
+    return this.quantity;
+  }
+
+  public Long getProductId() {
+    return this.productId;
+  }
 }
