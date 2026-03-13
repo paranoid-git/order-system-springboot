@@ -26,7 +26,6 @@ public class OrderProcessingService {
 
   private OrderService orderService;
 
-  @Autowired
   public OrderProcessingService(@Lazy OrderService orderService) {
     this.orderService = orderService;
   }
@@ -62,7 +61,7 @@ public class OrderProcessingService {
       logger.info("Sending confirmation email for order: " + orderId);
       emailService.sendOrderConfirmation(order, user);
     } catch (Exception e) {
-
+      logger.error(e.toString());
     }
   }
 }

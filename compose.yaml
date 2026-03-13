@@ -1,0 +1,94 @@
+version: "3.9"
+
+#   Prometheus  → http://localhost:9090
+#   Grafana     → http://localhost:3000  (admin / admin)
+#   Loki        → http://localhost:3100  (internal — Grafana talks to it)
+#   Kafka UI    → http://localhost:8080
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus_data: {}
+  loki_data: {}
+  grafana_data: {}
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    networks: [monitoring]
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    networks: [monitoring]
+    depends_on: [zookeeper]
+    ports:
+      - "9092:9092" # your Spring Boot app connects here
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # Expose JMX so kafka-exporter can scrape broker metrics
+      KAFKA_JMX_PORT: 9999
+      KAFKA_JMX_HOSTNAME: kafka
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    networks: [monitoring]
+    depends_on: [kafka]
+    command:
+      - "--kafka.server=kafka:9092"
+      - "--web.listen-address=:9308"
+    ports:
+      - "9308:9308"
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    networks: [monitoring]
+    depends_on: [kafka]
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    networks: [monitoring]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+
+  loki:
+    image: grafana/loki:2.9.6
+    networks: [monitoring]
+    volumes:
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    networks: [monitoring]
+    depends_on: [prometheus, loki]
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
